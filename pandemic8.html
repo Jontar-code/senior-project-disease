@@ -1,0 +1,622 @@
+<html>
+<head>
+<title> Disease Spread </title>
+<style>
+.container{
+	position: relative;
+	text-align: center;
+	width: 810px;
+	height: 226px;
+	border-style:solid;
+	margin:auto;
+}
+
+.continer2{
+	position: relative;
+	text-align: center;
+	border-style: solid;
+	float: left;
+}
+
+.container-wide{
+	position:relative;
+	margin:auto;
+	border-style:solid;
+	height: 232px;
+}
+
+.intro{
+	font-size:30px;
+}
+</style>
+<script language=JavaScript>
+	/*
+		Functioning: 
+				array populates table
+				table generates on page
+				table generates inside div
+				Infection source generates
+				Infection source updates array
+				Array then updates table cell
+				Infection "grows" up down left right
+				Program has timed "run" command with both start and stop functionality
+				Added reset button for table
+				Added ability to have infected cells either "recover" or "die" after being infected
+				Added larger fonts for easier visibility
+				Added speed variable for display alteration
+				Program "grows" disease according to random chance
+		In Progress:
+				click table cell to make it Infected instead of picking a random one
+				radio button options to have infection "grow" in 4 directions vs 8 directions
+				make user interface pretty and organized
+				Add displayable chart for displaying number of healthy, infected, recovered, dead, and immune cells over time
+				
+				
+	*/
+	var populationArray = [[],[],[],[],[],[],[],[],[],[]];
+	var randNumber=0;
+	var rowSize=0;
+	var tableMax=3;
+	var randHolder=0;
+	var randHolder2=0;
+	var randOnes=0;
+	var randTens=0;
+	var popHealth="-Normal-";
+	var popInfect="Infected";
+	var popDead =  "--Dead--";
+	var popDying = "--Sick--";
+	var popImmune= "-Immune-";
+	var popRecover="Recover-";
+	var somethingHere;
+	var stack;
+	var stackCount=0;
+	var stack2;
+	var stack3;
+
+	var dayCount=0;
+	var myVar;
+	//var randInfect=0;
+
+	class diseaseStack
+	{
+		constructor()
+		{
+			this.items=[];
+		}
+		
+		//functions to be implemented
+		//push(item)	(done)
+		//pop()			(done)
+		//peek()		(done)
+		//isEmpty()		(done)
+		//printStack()	(done)
+		
+		pop()
+		{
+			//returns topmost stack element
+			//also removes it from stack
+			//returns underflow if empty
+			if(this.items.length==0)
+				return "Underflow";
+				return this.items.pop();
+		}
+		
+		peek()
+		{
+			//returns topmost stack element
+			//does NOT remove it from stack
+			return this.items[this.items.length-1];
+		}
+		
+		isEmpty()
+		{
+			//returns true if stack is empty
+			return this.items.length==0;
+		}
+		
+		printStack()
+		{
+			//returns every item in the stack in the current order
+			var str="";
+			for(var i=0;i<this.items.length;i++)
+				{
+					str+=this.items[i] + " ";
+				}
+			return str;
+		}
+		
+		push(element)
+		{
+			//adds an item to the stack
+			this.items.push(element);
+		}
+		
+		stackLength()
+		{
+			//returns the current stack length
+			return this.items.length;
+		}
+	}
+	
+	function resetPopulation()
+	{
+		//alert("is");
+		var allTableCells=document.getElementsByTagName('td');
+		//alert("this");
+		var node;
+		//alert("really");
+		for(i=0;i<10;i++)
+		{
+			//alert("working");
+			randTens=i;
+			for(j=0;j<10;j++)
+			{
+				randOnes=j;
+				populationArray[i][j]=popHealth;
+				tempRandAssembly=i*10+j;
+				node=allTableCells[tempRandAssembly];
+				node.childNodes[0].nodeValue=populationArray[i][j];
+			}
+		}
+		autoClearBoy();
+		tableColor();
+		dayCount=0;
+		document.stuffForm.dayBox.value=dayCount;
+	}
+	
+
+	
+	function loadFunc()
+	{	
+		//alert("???");
+		for(i=0;i<10;i++)
+		{
+			
+			for(j=0;j<10;j++)
+			{
+				populationArray[i][j]=popHealth;
+
+			}
+
+		}
+		dayCount=0;
+		document.stuffForm.dayBox.value=dayCount;
+		addArrayTable();
+		//the following line is wrong somehow
+		//document.getElementByName('stopBoyStop').disabled=true;
+		//alert("things");
+	
+	}
+		
+
+	function addArrayTable()
+	{
+			var newTable=document.createElement('table');
+			newTable.style.fontFamily="Courier New";
+			for(var i=0;i<10;i++)
+			{
+
+				var tr2=document.createElement('tr');
+				
+				for(var j=0;j<10;j++)
+				{
+					//alert(populationArray[i][j]);
+					var td2=document.createElement('td');
+					var text2=document.createTextNode(populationArray[i][j]);
+					td2.appendChild(text2);
+					tr2.appendChild(td2);
+					//td2.style.width='155px';
+					//should be able to set table cell width directly when each is made, somehow.
+				}
+				newTable.appendChild(tr2);
+			}
+			document.getElementById('myDiv').appendChild(newTable);
+
+			tableColor();
+			
+			stack=new diseaseStack();
+			stack2=new diseaseStack();
+
+	}
+
+	
+	function tableColor()
+	{
+		var allTableCells=document.getElementsByTagName("td");
+		
+		for(var i=0, max=allTableCells.length;i<max;i++)
+		{
+			var node=allTableCells[i];
+			
+			var currentText=node.childNodes[0].nodeValue;
+			
+			if(currentText==="one")
+			{
+				node.style.background="red";
+			}
+			else if(currentText===popHealth)
+			{
+				node.style.background="green";
+				node.style.color="black"
+			}
+			else if(currentText===popInfect)
+			{
+				node.style.background="red";
+				node.style.color="black";
+			}
+			else if(currentText===popDead)
+			{
+				node.style.background="black";
+				node.style.color="white";
+			}
+			else if(currentText===popImmune)
+			{
+				node.style.background="white";
+				node.style.color="black";
+			}
+			else if(currentText===popDying)
+			{
+				node.style.background="darkred";
+				node.style.color="pink";
+			}
+			else if(currentText===popRecover)
+			{
+				node.style.background="blue";
+				node.style.color="yellow";
+			}
+		}
+	}
+	
+	function randomInfection()
+	{
+		immunizePopulation();
+		// log all the table cells as a collection of td's
+		var allTableCells=document.getElementsByTagName("td");
+		var infectedValue=false;
+		while(infectedValue==false)
+		{
+			// generate a random number between 0 and the total number of td's
+			var newRand=Math.floor((Math.random()*allTableCells.length));
+			randHolder=newRand;
+			randTens=Math.floor(randHolder/10);
+			randOnes=randHolder%10;
+			
+			var node=allTableCells[newRand];
+			var currentText=node.childNodes[0].nodeValue;
+
+			if(currentText!==popImmune)
+			{
+				currentText=popInfect;
+				populationArray[randTens][randOnes]=currentText;
+				node.childNodes[0].nodeValue=populationArray[randTens][randOnes];
+				infectedValue=true;
+			}
+		}
+		
+		tableColor();
+		stack.push(randHolder);
+		console.log(stack.printStack());
+		
+		
+	}
+	
+	function stackTransfer()
+	{
+		var tempLength=stack2.stackLength();
+			for(var i=tempLength;i>0;i--)
+			{
+				var tempStackItem=stack2.pop();
+				stack.push(tempStackItem);
+			}
+		console.log("Stack 1: " + stack.printStack());
+	}
+	
+	function startDying()
+	{
+		var allTableCells=document.getElementsByTagName('td');
+		var node;
+		var deathNote=document.stuffForm.dropDead.value;
+		
+		for(var m=0;m<allTableCells.length;m++)
+		{
+			node=allTableCells[m];
+			
+			if(node.childNodes[0].nodeValue==popDying)
+			{
+				randHolder2=Math.random();
+				if(randHolder2<deathNote)
+				{
+				node.childNodes[0].nodeValue=popDead;
+				}
+				else
+				{
+				node.childNodes[0].nodeValue=popRecover;
+				}
+			}
+		}
+	}
+	
+	function expandingInfection()
+	{
+	
+		//scan through the whole population
+		//if a td is found with value="Infected", add it to a stack
+		// once the stack is assembled
+		// take an item from the stack, growing in four directions per growth step
+		// repeat until stack is empty
+		
+		var newLength=stack.stackLength()
+		var allTableCells=document.getElementsByTagName("td");
+		var node;
+		var randAssembly;
+		var tempRandAssembly;
+		var infectNote=document.stuffForm.dropInfect.value;
+		
+		var randInfect=eval(document.stuffForm.dropInfect.value);
+		startDying();
+		
+		for(var i=newLength;i>0;i--)
+		{
+		
+			somethingHere=stack.pop();
+			
+			randTens=Math.floor(somethingHere/10);
+			randOnes=somethingHere%10;
+			randAssembly=randTens*10+randOnes;
+			tempRandAssembly=0;
+			
+			//var randCompare=Math.random();
+			//alert(randCompare);
+			//alert(randAssembly);
+			if(populationArray[randTens][randOnes] == popInfect)
+			{
+			
+				populationArray[randTens][randOnes]=popDying;
+				node=allTableCells[somethingHere];
+				node.childNodes[0].nodeValue=populationArray[randTens][randOnes];
+				
+				
+				if(randTens-1>-1)
+				{
+					//randCompare=Math.random();
+					if(populationArray[randTens-1][randOnes]!=popImmune && populationArray[randTens-1][randOnes]!=popDying && populationArray[randTens-1][randOnes]!=popDead)
+					{
+						if(populationArray[randTens-1][randOnes]!=popInfect)
+						{
+							var randCompare=Math.random();
+							
+							if(randCompare<infectNote)
+							{
+								populationArray[randTens-1][randOnes]=popInfect;
+								tempRandAssembly=(randTens-1)*10+randOnes;
+								node=allTableCells[tempRandAssembly];
+								node.childNodes[0].nodeValue=populationArray[randTens-1][randOnes];
+								stack2.push(tempRandAssembly);
+							}
+						}
+					}
+				}
+				
+				if(randTens+1<10)
+				{
+					//randCompare=Math.random();
+					if(populationArray[randTens+1][randOnes]!=popImmune && populationArray[randTens+1][randOnes]!=popDying && populationArray[randTens+1][randOnes]!=popDead)
+					{
+						if(populationArray[randTens+1][randOnes]!=popInfect)
+						{
+							var randCompare=Math.random();
+							
+							if(randCompare<infectNote)
+							{
+								populationArray[randTens+1][randOnes]=popInfect;
+								tempRandAssembly=(randTens+1)*10+randOnes;
+								node=allTableCells[tempRandAssembly];
+								node.childNodes[0].nodeValue=populationArray[randTens+1][randOnes];
+								stack2.push(tempRandAssembly);
+							}
+						}
+					}
+				}
+				
+				if(randOnes-1>-1)
+				{
+					//randCompare=Math.random();
+					if(populationArray[randTens][randOnes-1]!=popImmune && populationArray[randTens][randOnes-1]!=popDying && populationArray[randTens][randOnes-1]!=popDead)
+					{
+						if(populationArray[randTens][randOnes-1]!=popInfect)
+						{
+							var randCompare=Math.random();
+							
+							if(randCompare<infectNote)
+							{
+								populationArray[randTens][randOnes-1]=popInfect;
+								tempRandAssembly=randTens*10+(randOnes-1);
+								node=allTableCells[tempRandAssembly];
+								node.childNodes[0].nodeValue=populationArray[randTens][randOnes-1];
+								stack2.push(tempRandAssembly);
+							}
+						}
+					}
+				}
+				
+				if(randOnes+1<10)
+				{
+					//randCompare=Math.random();
+					if(populationArray[randTens][randOnes+1]!=popImmune && populationArray[randTens][randOnes+1]!=popDying && populationArray[randTens][randOnes+1]!=popDead)
+					{
+						if(populationArray[randTens][randOnes+1]!=popInfect)
+						{
+							var randCompare=Math.random();
+							
+							if(randCompare<infectNote)
+							{
+							populationArray[randTens][randOnes+1]=popInfect;
+							tempRandAssembly=randTens*10+(randOnes+1);
+							node=allTableCells[tempRandAssembly];
+							node.childNodes[0].nodeValue=populationArray[randTens][randOnes+1];
+							stack2.push(tempRandAssembly);
+							}
+						}
+					}
+				}		
+				//stack3.push(somethingHere);
+			
+			}
+
+		}//end for loop
+
+		
+		tableColor();
+		console.log("Stack 1: " + stack.printStack());
+		console.log("Stack 1 length: "+ stack.stackLength());
+		console.log("Stack 2: " + stack2.printStack());
+		console.log("Stack 2 length: "+ stack2.stackLength());
+		//endingStackLength=stack2.stackLength();
+		dayCount++;
+		document.stuffForm.dayBox.value=dayCount;
+		stackTransfer();	
+		if(dayCount>20)
+		{
+			autoClearBoy();
+		}
+	}
+	
+		//why does this function break everything?
+	function autoRunBoy()
+	{
+		randomInfection();
+		//disableButton(this);
+		if(document.stuffForm.speed.value=="slow")
+		{
+			myVar=setInterval(expandingInfection,1000);
+		}
+		else if(document.stuffForm.speed.value=="med")
+		{
+			myVar=setInterval(expandingInfection,500);
+		}
+		else
+		{
+			myVar=setInterval(expandingInfection,100);
+		}
+		
+		//alert(runBoyRun.disabled);
+	}
+	/*
+	function disableButton(btn)
+	{
+		alert("working");
+		document.getElementById(btn.id).disabled = true;
+		alert("Button has been disabled.");
+	}
+	*/
+	function autoClearBoy()
+	{
+		clearTimeout(myVar);
+	}
+	
+	function immunizePopulation()
+	{
+		var allTableCells=document.getElementsByTagName("td");
+		var popVal=eval(document.stuffForm.dropImmune.value);
+		var randTempAssembly=0;
+		var randTens=0;
+		var randOnes=0;
+		popVal=popVal*allTableCells.length;
+		//alert(popVal);
+		
+		for(var i=0;i<popVal;i++)
+		{
+			var newRand=Math.floor((Math.random()*allTableCells.length))
+			var node=allTableCells[newRand];
+			node.childNodes[0].nodeValue=popImmune;
+			randTens=Math.floor(newRand/10);
+			randOnes=Math.floor(newRand%10);
+			populationArray[randTens][randOnes]=popImmune;
+		}
+		tableColor();
+		
+	}
+	
+</script>
+</head>
+
+<body onload="loadFunc()">
+<form name="stuffForm">
+<p class="intro">
+This is a simulation about the spread of disease across a population. <br />
+It includes a base rate of immunization to illustrate the value of herd immunity. <br />
+It is primarily designed with an interweaving of HTML, JavaScript, and CSS. <br />
+Programmer: Jason S. Lemery <br/>
+<br /></p>
+
+Immunization rate: 
+<select name="dropImmune">
+
+	<option value=".20">20%</option>
+
+	<option value=".40">40%</option>
+
+	<option value=".60">60%</option>
+
+	<option value=".80">80%</option>
+
+</select>
+
+<br />
+Infection chance: 
+<select name="dropInfect">
+	<option value="1.0">100%</option>
+	<option value=".80">80%</option>
+	<option value=".60">60%</option>
+	<option value=".40">40%</option>
+	<option value=".20">20%</option>
+
+</select>
+<br />
+Disease deadliness: 
+<select name="dropDead">
+	<option value=".10">10%</option>
+	<option value=".20">20%</option>
+	<option value=".30">30%</option>
+	<option value=".40">40%</option>
+	<option value=".50">50%</option>
+	<option value=".60">60%</option>
+	<option value=".70">70%</option>
+	<option value=".80">80%</option>
+	<option value=".90">90%</option>
+</select>
+<br />
+Day: <input type="text" name="dayBox" size="5" />
+<br />
+Control the very fabric of time: 
+<input type="radio" name="speed" value="slow">Slow</input>
+<input type="radio" name="speed" value="med">Medium</input>
+<input type="radio" name="speed" value="fast">Fast</input>
+
+</form>
+
+<!--<button name="addPop" onclick="addArrayTable()">Add another "population"</button>
+-->
+<br />
+<!--<button name="infectStart" onclick="randomInfection()">Infect!</button>
+-->
+<!--<button name="vaccines" onclick="immunizePopulation()">Immunize!</button>
+-->
+<button name="infectStep" onclick="expandingInfection()">Step Simulation</button>
+<button name="runBoyRun" id="btnGo" onclick="autoRunBoy()">Run Simulation</button>
+<button name="stopBoyStop" id="btnStop" onclick="autoClearBoy()">Stop Simulation</button>
+<button name="resetPop" onclick="resetPopulation()">Reset Simulation</button>
+<br />
+
+<br />
+<br />
+
+<div id="myDiv" class="container">
+
+	
+</div>
+
+
+
+</body>
+</html>
